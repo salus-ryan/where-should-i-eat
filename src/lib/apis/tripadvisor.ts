@@ -9,7 +9,15 @@ import { PlatformReview } from '@/types';
 
 const TRIPADVISOR_API_KEY = process.env.TRIPADVISOR_API_KEY;
 
-interface TripAdvisorLocation {
+interface TripAdvisorSearchResult {
+  location_id: string;
+  name: string;
+  address_obj?: {
+    address_string: string;
+  };
+}
+
+interface TripAdvisorDetails {
   location_id: string;
   name: string;
   rating: string;
@@ -26,10 +34,10 @@ export async function searchTripAdvisor(name: string, location: string): Promise
   }
 
   try {
-    // First, search for the location
+    // Search for the location
     const searchUrl = new URL('https://api.content.tripadvisor.com/api/v1/location/search');
     searchUrl.searchParams.set('key', TRIPADVISOR_API_KEY);
-    searchUrl.searchParams.set('searchQuery', `${name} ${location}`);
+    searchUrl.searchParams.set('searchQuery', `${name} restaurant ${location}`);
     searchUrl.searchParams.set('category', 'restaurants');
     searchUrl.searchParams.set('language', 'en');
 
@@ -49,13 +57,14 @@ export async function searchTripAdvisor(name: string, location: string): Promise
       return null;
     }
 
-    const locationId = searchData.data[0].location_id;
+    // Find best match by name similarity
+    const searchResult: TripAdvisorSearchResult = searchData.data[0];
+    const locationId = searchResult.location_id;
 
-    // Get details for the location
+    // Get details for the location (includes rating)
     const detailsUrl = new URL(`https://api.content.tripadvisor.com/api/v1/location/${locationId}/details`);
     detailsUrl.searchParams.set('key', TRIPADVISOR_API_KEY);
     detailsUrl.searchParams.set('language', 'en');
-    detailsUrl.searchParams.set('currency', 'USD');
 
     const detailsResponse = await fetch(detailsUrl.toString(), {
       headers: {
@@ -67,7 +76,7 @@ export async function searchTripAdvisor(name: string, location: string): Promise
       return null;
     }
 
-    const details: TripAdvisorLocation = await detailsResponse.json();
+    const details: TripAdvisorDetails = await detailsResponse.json();
     
     const rating = parseFloat(details.rating);
     const reviewCount = parseInt(details.num_reviews, 10);
@@ -75,6 +84,8 @@ export async function searchTripAdvisor(name: string, location: string): Promise
     if (isNaN(rating) || rating === 0) {
       return null;
     }
+
+    console.log(`TripAdvisor found: ${details.name} - ${rating}★ (${reviewCount} reviews)`);
 
     return {
       platform: 'tripadvisor',

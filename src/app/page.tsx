@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Utensils, Navigation, Clock } from 'lucide-react';
-import { SearchForm, WeightingSelector, ResultCard, LocationButton, RestaurantList } from '@/components';
+import { Utensils, Navigation } from 'lucide-react';
+import { SearchForm, WeightingSelector, ResultCard, LocationButton } from '@/components';
 import { Restaurant, WeightingConfig } from '@/types';
 import { Coordinates, getCurrentPosition, reverseGeocode } from '@/lib/geolocation';
 
@@ -21,8 +21,7 @@ export default function Home() {
   });
     const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
-  const [maxTravelTime, setMaxTravelTime] = useState(20);
-  const [openNowOnly, setOpenNowOnly] = useState(true);
+  const maxTravelTime = 30; // Fixed 30 min max travel time
   const [locationLoading, setLocationLoading] = useState(false);
 
   // Auto-trigger location permission on mount
@@ -68,7 +67,7 @@ export default function Home() {
           userLat: userLocation?.latitude,
           userLon: userLocation?.longitude,
           maxTravelTimeMin: maxTravelTime,
-          openNowOnly,
+          openNowOnly: true,
         }),
       });
 
@@ -117,7 +116,7 @@ export default function Home() {
           userLat: userLocation.latitude,
           userLon: userLocation.longitude,
           maxTravelTimeMin: maxTravelTime,
-          openNowOnly,
+          openNowOnly: true,
         }),
       });
 
@@ -127,19 +126,20 @@ export default function Home() {
         throw new Error(data.error || 'Search failed');
       }
 
-      if (data.restaurants) {
-        setListResults(data.restaurants);
+      if (data.restaurants && data.restaurants.length > 0) {
+        // Auto-select the best option (first one, already sorted by value score)
+        const bestRestaurant = data.restaurants[0];
+        setSingleResult({ restaurant: bestRestaurant });
+        // Store the rest as alternatives
+        setListResults(data.restaurants.slice(1));
+      } else {
+        setError('No restaurants found matching your criteria');
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleSelectRestaurant = (restaurant: Restaurant) => {
-    setSingleResult({ restaurant });
-    setListResults(null);
   };
 
   return (
@@ -171,34 +171,6 @@ export default function Home() {
                 isLoading={locationLoading}
               />
               
-              <div className="flex items-center gap-4">
-                {/* Travel time filter */}
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <select
-                    value={maxTravelTime}
-                    onChange={(e) => setMaxTravelTime(parseInt(e.target.value))}
-                    className="text-sm border border-gray-200 rounded-lg px-2 py-1 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                  >
-                    <option value={10}>10 min</option>
-                    <option value={15}>15 min</option>
-                    <option value={20}>20 min</option>
-                    <option value={30}>30 min</option>
-                    <option value={45}>45 min</option>
-                  </select>
-                </div>
-
-                {/* Open now toggle */}
-                <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={openNowOnly}
-                    onChange={(e) => setOpenNowOnly(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-                  />
-                  Open now
-                </label>
-              </div>
             </div>
 
             {/* Find nearby button */}
@@ -230,30 +202,22 @@ export default function Home() {
             </div>
           )}
 
-          {/* Results - List view */}
-          {listResults && (
-            <div className="mt-8">
-              <RestaurantList 
-                restaurants={listResults} 
-                onSelect={handleSelectRestaurant}
-              />
-            </div>
-          )}
-
-          {/* Results - Single restaurant view */}
+          {/* Results - Best restaurant recommendation */}
           {singleResult && (
             <div className="mt-8">
-              {listResults && (
-                <button
-                  onClick={() => {
-                    setSingleResult(null);
-                  }}
-                  className="mb-4 text-sm text-orange-600 hover:text-orange-700 flex items-center gap-1"
-                >
-                  ← Back to list
-                </button>
-              )}
+              <div className="text-center mb-4">
+                <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
+                  🎯 Best Match
+                </span>
+              </div>
               <ResultCard restaurant={singleResult.restaurant} errors={singleResult.errors} />
+              
+              {/* Show alternatives count */}
+              {listResults && listResults.length > 0 && (
+                <p className="text-center text-sm text-gray-500 mt-4">
+                  {listResults.length} other option{listResults.length > 1 ? 's' : ''} available nearby
+                </p>
+              )}
             </div>
           )}
 
