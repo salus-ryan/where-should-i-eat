@@ -6,9 +6,11 @@
 import { PlatformReview } from '@/types';
 import { searchYelp } from './yelp';
 import { searchFoursquare } from './foursquare';
+import { searchTripAdvisor } from './tripadvisor';
 
 export { searchYelp, searchYelpNearby } from './yelp';
 export { searchFoursquare, searchFoursquareNearby } from './foursquare';
+export { searchTripAdvisor } from './tripadvisor';
 
 // Simple delay helper
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -40,10 +42,16 @@ export async function fetchAllPlatformReviews(
     reviews.push(yelpResult);
   }
   
-  // Foursquare (no rate limiting needed for now)
+  // Foursquare
   const foursquareResult = await searchFoursquare(restaurantName, location);
   if (foursquareResult) {
     reviews.push(foursquareResult);
+  }
+
+  // TripAdvisor
+  const tripAdvisorResult = await searchTripAdvisor(restaurantName, location);
+  if (tripAdvisorResult) {
+    reviews.push(tripAdvisorResult);
   }
 
   return reviews;

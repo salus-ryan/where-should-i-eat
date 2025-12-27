@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Utensils, Sparkles, Navigation, Clock } from 'lucide-react';
+import { Utensils, Navigation, Clock } from 'lucide-react';
 import { SearchForm, WeightingSelector, ResultCard, LocationButton, RestaurantList } from '@/components';
 import { Restaurant, WeightingConfig } from '@/types';
 import { Coordinates, getCurrentPosition, reverseGeocode } from '@/lib/geolocation';
@@ -19,8 +19,7 @@ export default function Home() {
     bayesianPrior: 3.5,
     bayesianMinReviews: 10,
   });
-  const [useDemo, setUseDemo] = useState(false);
-  const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
+    const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
   const [maxTravelTime, setMaxTravelTime] = useState(20);
   const [openNowOnly, setOpenNowOnly] = useState(true);
@@ -58,7 +57,7 @@ export default function Home() {
     setListResults(null);
 
     try {
-      const endpoint = useDemo ? '/api/demo' : '/api/search';
+      const endpoint = '/api/search';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -107,7 +106,7 @@ export default function Home() {
     setListResults(null);
 
     try {
-      const endpoint = useDemo ? '/api/demo' : '/api/search';
+      const endpoint = '/api/search';
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -213,22 +212,6 @@ export default function Home() {
                 Find Best Restaurant Near Me
               </button>
             )}
-          </div>
-
-          {/* Demo mode toggle */}
-          <div className="flex items-center justify-center gap-2 mb-6">
-            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={useDemo}
-                onChange={(e) => setUseDemo(e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
-              />
-              <span className="flex items-center gap-1">
-                <Sparkles className="w-4 h-4" />
-                Demo Mode (instant results)
-              </span>
-            </label>
           </div>
 
           {/* Search form for specific restaurant */}
