@@ -100,17 +100,11 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50">
-      {/* Header - compact for mobile */}
-      <header className="pt-6 pb-4 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-3">
-            <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-lg">
-              <Utensils className="w-5 h-5 text-white" />
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Where Should I Eat?
-            </h1>
-          </div>
+      {/* Header - minimal for mobile */}
+      <header className="pt-4 pb-2 px-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-center gap-2">
+          <Utensils className="w-5 h-5 text-orange-500" />
+          <h1 className="text-lg font-bold text-gray-900">Where Should I Eat?</h1>
         </div>
       </header>
 
@@ -165,41 +159,48 @@ export default function Home() {
 
           {/* Results - Yes/No flow */}
           {currentRestaurant && (
-            <div className="mt-8">
-              <div className="text-center mb-4">
-                <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                  🎯 #{currentIndex + 1} Pick
-                </span>
+            <div className="mt-2">
+              {/* Compact result card */}
+              <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-3 text-white mb-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-xs opacity-80">#{currentIndex + 1} Pick</p>
+                    <h2 className="text-lg font-bold">{currentRestaurant.name}</h2>
+                    <p className="text-sm opacity-90">{currentRestaurant.address}</p>
+                    <div className="flex gap-3 mt-1 text-xs">
+                      {currentRestaurant.travelTimeMin && <span>🚶 {currentRestaurant.travelTimeMin} min</span>}
+                      {currentRestaurant.isOpenNow && <span>✓ Open</span>}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-bold">{currentRestaurant.aggregatedScore.toFixed(1)}</div>
+                    <div className="text-xs opacity-80">{currentRestaurant.reviews.length} sources</div>
+                  </div>
+                </div>
               </div>
-              <ResultCard restaurant={currentRestaurant} />
               
               {/* Action buttons */}
-              <div className="flex gap-4 mt-6 justify-center">
+              <div className="flex gap-3">
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentRestaurant.address)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 max-w-xs py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all flex items-center justify-center gap-2"
+                  className="flex-1 py-3 bg-green-500 text-white font-semibold rounded-xl flex items-center justify-center gap-2"
                 >
-                  <MapPin className="w-5 h-5" />
+                  <MapPin className="w-4 h-4" />
                   Let&apos;s Go!
                 </a>
-                
                 {hasMoreOptions && (
                   <button
                     onClick={() => setCurrentIndex(currentIndex + 1)}
-                    className="flex-1 max-w-xs py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl flex items-center justify-center gap-2"
                   >
-                    <RefreshCw className="w-5 h-5" />
-                    Show Another
+                    <RefreshCw className="w-4 h-4" />
+                    Next
                   </button>
                 )}
               </div>
-              
-              {/* Progress indicator */}
-              <p className="text-center text-sm text-gray-400 mt-4">
-                Option {currentIndex + 1} of {allResults.length}
-              </p>
+              <p className="text-center text-xs text-gray-400 mt-2">{currentIndex + 1} of {allResults.length}</p>
             </div>
           )}
 
