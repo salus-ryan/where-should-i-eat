@@ -94,16 +94,24 @@ export async function POST(request: NextRequest) {
         // Calculate radius based on travel time (rough estimate: 20 min ≈ 8km at urban speeds)
         const radiusMeters = Math.round((maxTravelTimeMin / 20) * 8000);
         
-        const places = await searchNearbyPlaces({
+        const allPlaces = await searchNearbyPlaces({
           latitude: userLat,
           longitude: userLon,
           radius: radiusMeters,
           openNow: isNow, // Only filter by "open now" if searching for right now
         });
 
-        // Process ALL places in PARALLEL for maximum speed
+        // Filter to only places with Google rating >= 4.0
+        const qualityPlaces = allPlaces.filter(p => (p.rating || 0) >= 4.0);
+        
+        // Sort by Google rating descending, take top 20 for enrichment
+        const topPlaces = qualityPlaces
+          .sort((a, b) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 20);
+
+        // Enrich top 20 with Yelp/TripAdvisor data in parallel
         const restaurants: Restaurant[] = await Promise.all(
-          places.slice(0, 20).map(async (place) => {
+          topPlaces.map(async (place) => {
             // Start with Google's rating from Places API
             const googleReview: PlatformReview = {
               platform: 'google',
@@ -184,16 +192,17 @@ export async function POST(request: NextRequest) {
               return r.isOpenNow === true;
             } else {
               // For future times, check opening hours
-              const place = places.find(p => p.placeId === r.id);
+              const place = topPlaces.find(p => p.placeId === r.id);
               return isOpenAtTime(place?.openingHours, plannedDate);
             }
           })
           .filter(r => (r.travelTimeMin || 0) <= maxTravelTimeMin || r.isExceptional)
-          .sort((a, b) => (b.valueScore || 0) - (a.valueScore || 0));
+          .sort((a, b) => (b.valueScore || 0) - (a.valueScore || 0))
+          .slice(0, 10); // Return top 10 only
 
         return NextResponse.json({
           restaurants: results,
-          totalFound: places.length,
+          totalFound: allPlaces.length,
           filteredCount: results.length,
         });
 
