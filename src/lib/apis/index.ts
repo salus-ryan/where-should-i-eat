@@ -12,47 +12,38 @@ export { searchYelp, searchYelpNearby } from './yelp';
 export { searchFoursquare, searchFoursquareNearby } from './foursquare';
 export { searchTripAdvisor } from './tripadvisor';
 
-// Simple delay helper
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-// Track last Yelp request time to avoid rate limits
-let lastYelpRequest = 0;
-const YELP_MIN_INTERVAL = 200; // 200ms between requests
+const API_TIMEOUT = 5000; // 5 second timeout per API call
 
 /**
- * Fetch reviews from multiple platforms using APIs
- * Includes rate limiting for Yelp API
+ * Wrap a promise with a timeout
+ */
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T | null> {
+  return Promise.race([
+    promise,
+    new Promise<null>((resolve) => setTimeout(() => resolve(null), ms))
+  ]);
+}
+
+/**
+ * Fetch reviews from multiple platforms in PARALLEL
+ * Each API call has a timeout to prevent slow responses from blocking
  */
 export async function fetchAllPlatformReviews(
   restaurantName: string,
   location: string
 ): Promise<PlatformReview[]> {
+  // Run all API calls in parallel with timeouts
+  const [yelpResult, foursquareResult, tripAdvisorResult] = await Promise.all([
+    withTimeout(searchYelp(restaurantName, location), API_TIMEOUT),
+    withTimeout(searchFoursquare(restaurantName, location), API_TIMEOUT),
+    withTimeout(searchTripAdvisor(restaurantName, location), API_TIMEOUT),
+  ]);
+
   const reviews: PlatformReview[] = [];
   
-  // Yelp with rate limiting
-  const now = Date.now();
-  const timeSinceLastYelp = now - lastYelpRequest;
-  if (timeSinceLastYelp < YELP_MIN_INTERVAL) {
-    await delay(YELP_MIN_INTERVAL - timeSinceLastYelp);
-  }
-  lastYelpRequest = Date.now();
-  
-  const yelpResult = await searchYelp(restaurantName, location);
-  if (yelpResult) {
-    reviews.push(yelpResult);
-  }
-  
-  // Foursquare
-  const foursquareResult = await searchFoursquare(restaurantName, location);
-  if (foursquareResult) {
-    reviews.push(foursquareResult);
-  }
-
-  // TripAdvisor
-  const tripAdvisorResult = await searchTripAdvisor(restaurantName, location);
-  if (tripAdvisorResult) {
-    reviews.push(tripAdvisorResult);
-  }
+  if (yelpResult) reviews.push(yelpResult);
+  if (foursquareResult) reviews.push(foursquareResult);
+  if (tripAdvisorResult) reviews.push(tripAdvisorResult);
 
   return reviews;
 }

@@ -57,10 +57,9 @@ export async function POST(request: NextRequest) {
           openNow: openNowOnly,
         });
 
-        // Process places - fetch from multiple platform APIs sequentially to avoid rate limits
-        const restaurants: Restaurant[] = [];
-        
-        for (const place of places.slice(0, 10)) {
+        // Process ALL places in PARALLEL for maximum speed
+        const restaurants: Restaurant[] = await Promise.all(
+          places.slice(0, 10).map(async (place) => {
             // Start with Google's rating from Places API
             const googleReview: PlatformReview = {
               platform: 'google',
@@ -68,7 +67,7 @@ export async function POST(request: NextRequest) {
               reviewCount: place.userRatingsTotal || 0,
             };
 
-            // Fetch from Yelp and Foursquare APIs
+            // Fetch from Yelp, Foursquare, TripAdvisor APIs in parallel
             const additionalReviews = await fetchAllPlatformReviews(
               place.name,
               place.address
@@ -106,8 +105,9 @@ export async function POST(request: NextRequest) {
               exceptional
             );
 
-            restaurants.push(restaurant);
-        }
+            return restaurant;
+          })
+        );
 
         // Filter and sort by value score
         const results = restaurants
