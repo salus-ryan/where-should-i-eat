@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
 
         // Process ALL places in PARALLEL for maximum speed
         const restaurants: Restaurant[] = await Promise.all(
-          places.slice(0, 10).map(async (place) => {
+          places.slice(0, 20).map(async (place) => {
             // Start with Google's rating from Places API
             const googleReview: PlatformReview = {
               platform: 'google',
