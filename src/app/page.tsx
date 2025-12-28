@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Utensils, Navigation, RefreshCw, MapPin, Clock, ChevronLeft } from 'lucide-react';
+import { Utensils, Navigation, RefreshCw, MapPin, Clock, ChevronLeft, Loader2 } from 'lucide-react';
 import { ResultCard, LocationButton } from '@/components';
 import { Restaurant } from '@/types';
 import { Coordinates, getCurrentPosition, reverseGeocode } from '@/lib/geolocation';
@@ -150,6 +150,14 @@ export default function Home() {
           </div>
 
 
+          {/* Loading spinner */}
+          {isLoading && (
+            <div className="mt-8 flex flex-col items-center justify-center">
+              <Loader2 className="w-10 h-10 text-orange-500 animate-spin" />
+              <p className="mt-3 text-gray-600 font-medium">Finding the best spot...</p>
+            </div>
+          )}
+
           {/* Error display */}
           {error && (
             <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-center">
@@ -158,7 +166,7 @@ export default function Home() {
           )}
 
           {/* Results - Yes/No flow */}
-          {currentRestaurant && (
+          {currentRestaurant && !isLoading && (
             <div className="mt-2">
               {/* Compact result card */}
               <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-3 text-white mb-3">
