@@ -254,13 +254,21 @@ export default function Home() {
                   <MapPin className="w-4 h-4" />
                   Let&apos;s Go!
                 </a>
-                {hasMoreOptions && (
+                {hasMoreOptions ? (
                   <button
                     onClick={() => setCurrentIndex(currentIndex + 1)}
                     className="flex-1 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl flex items-center justify-center gap-2"
                   >
                     <RefreshCw className="w-4 h-4" />
                     Next
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => setCurrentIndex(0)}
+                    className="flex-1 py-3 bg-gray-200 text-gray-700 font-semibold rounded-xl flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Start Over
                   </button>
                 )}
               </div>
