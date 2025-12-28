@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Utensils, Navigation } from 'lucide-react';
+import { Utensils, Navigation, RefreshCw, MapPin, Clock } from 'lucide-react';
 import { SearchForm, WeightingSelector, ResultCard, LocationButton } from '@/components';
 import { Restaurant, WeightingConfig } from '@/types';
 import { Coordinates, getCurrentPosition, reverseGeocode } from '@/lib/geolocation';
@@ -12,8 +12,10 @@ export default function Home() {
     restaurant: Restaurant;
     errors?: Record<string, string>;
   } | null>(null);
-  const [listResults, setListResults] = useState<Restaurant[] | null>(null);
+  const [allResults, setAllResults] = useState<Restaurant[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [plannedTime, setPlannedTime] = useState<string>('now'); // 'now' or ISO datetime
   const [weightingConfig, setWeightingConfig] = useState<WeightingConfig>({
     strategy: 'bayesian_average',
     bayesianPrior: 3.5,
@@ -22,6 +24,10 @@ export default function Home() {
     const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
   const maxTravelTime = 30; // Fixed 30 min max travel time
+
+  // Get current restaurant from results
+  const currentRestaurant = allResults.length > 0 ? allResults[currentIndex] : null;
+  const hasMoreOptions = currentIndex < allResults.length - 1;
   const [locationLoading, setLocationLoading] = useState(false);
 
   // Auto-trigger location permission on mount
@@ -53,7 +59,8 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     setSingleResult(null);
-    setListResults(null);
+    setAllResults([]);
+    setCurrentIndex(0);
 
     try {
       const endpoint = '/api/search';
@@ -84,7 +91,7 @@ export default function Home() {
           errors: data.errors,
         });
       } else if (data.restaurants) {
-        setListResults(data.restaurants);
+        setAllResults(data.restaurants);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
@@ -102,7 +109,8 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     setSingleResult(null);
-    setListResults(null);
+    setAllResults([]);
+    setCurrentIndex(0);
 
     try {
       const endpoint = '/api/search';
@@ -116,7 +124,7 @@ export default function Home() {
           userLat: userLocation.latitude,
           userLon: userLocation.longitude,
           maxTravelTimeMin: maxTravelTime,
-          openNowOnly: true,
+          plannedTime,
         }),
       });
 
@@ -127,11 +135,9 @@ export default function Home() {
       }
 
       if (data.restaurants && data.restaurants.length > 0) {
-        // Auto-select the best option (first one, already sorted by value score)
-        const bestRestaurant = data.restaurants[0];
-        setSingleResult({ restaurant: bestRestaurant });
-        // Store the rest as alternatives
-        setListResults(data.restaurants.slice(1));
+        // Store all results, currentIndex=0 shows the best one
+        setAllResults(data.restaurants);
+        setCurrentIndex(0);
       } else {
         setError('No restaurants found matching your criteria');
       }
@@ -162,7 +168,7 @@ export default function Home() {
       {/* Main content */}
       <main className="px-4 pb-16">
         <div className="max-w-4xl mx-auto">
-          {/* Location & Filters */}
+          {/* Location & Time */}
           <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <LocationButton 
@@ -171,6 +177,20 @@ export default function Home() {
                 isLoading={locationLoading}
               />
               
+              {/* Time picker */}
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-gray-500" />
+                <select
+                  value={plannedTime}
+                  onChange={(e) => setPlannedTime(e.target.value)}
+                  className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
+                >
+                  <option value="now">Right now</option>
+                  <option value="tonight">Tonight (7pm)</option>
+                  <option value="tomorrow_lunch">Tomorrow lunch (12pm)</option>
+                  <option value="tomorrow_dinner">Tomorrow dinner (7pm)</option>
+                </select>
+              </div>
             </div>
 
             {/* Find nearby button */}
@@ -181,7 +201,7 @@ export default function Home() {
                 className="w-full mt-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
               >
                 <Navigation className="w-5 h-5" />
-                Find Best Restaurant Near Me
+                {plannedTime === 'now' ? 'Find Best Restaurant Near Me' : `Find Restaurant for ${plannedTime === 'tonight' ? 'Tonight' : plannedTime === 'tomorrow_lunch' ? 'Tomorrow Lunch' : 'Tomorrow Dinner'}`}
               </button>
             )}
           </div>
@@ -202,27 +222,48 @@ export default function Home() {
             </div>
           )}
 
-          {/* Results - Best restaurant recommendation */}
-          {singleResult && (
+          {/* Results - Yes/No flow */}
+          {currentRestaurant && (
             <div className="mt-8">
               <div className="text-center mb-4">
                 <span className="inline-block px-3 py-1 bg-green-100 text-green-800 text-sm font-medium rounded-full">
-                  🎯 Best Match
+                  🎯 #{currentIndex + 1} Pick
                 </span>
               </div>
-              <ResultCard restaurant={singleResult.restaurant} errors={singleResult.errors} />
+              <ResultCard restaurant={currentRestaurant} />
               
-              {/* Show alternatives count */}
-              {listResults && listResults.length > 0 && (
-                <p className="text-center text-sm text-gray-500 mt-4">
-                  {listResults.length} other option{listResults.length > 1 ? 's' : ''} available nearby
-                </p>
-              )}
+              {/* Action buttons */}
+              <div className="flex gap-4 mt-6 justify-center">
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentRestaurant.address)}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1 max-w-xs py-3 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-semibold rounded-xl hover:from-green-600 hover:to-emerald-600 transition-all flex items-center justify-center gap-2"
+                >
+                  <MapPin className="w-5 h-5" />
+                  Let&apos;s Go!
+                </a>
+                
+                {hasMoreOptions && (
+                  <button
+                    onClick={() => setCurrentIndex(currentIndex + 1)}
+                    className="flex-1 max-w-xs py-3 bg-gray-100 text-gray-700 font-semibold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    <RefreshCw className="w-5 h-5" />
+                    Show Another
+                  </button>
+                )}
+              </div>
+              
+              {/* Progress indicator */}
+              <p className="text-center text-sm text-gray-400 mt-4">
+                Option {currentIndex + 1} of {allResults.length}
+              </p>
             </div>
           )}
 
           {/* Getting started prompt */}
-          {!singleResult && !listResults && !isLoading && (
+          {!currentRestaurant && !isLoading && (
             <div className="mt-12 text-center">
               {!userLocation ? (
                 <div className="p-6 bg-orange-50 rounded-xl border border-orange-200">

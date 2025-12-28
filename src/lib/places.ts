@@ -5,6 +5,11 @@
  * Set it as GOOGLE_PLACES_API_KEY in your environment.
  */
 
+export interface OpeningHoursPeriod {
+  open: { day: number; time: string }; // day: 0=Sunday, time: "0900"
+  close?: { day: number; time: string };
+}
+
 export interface PlaceResult {
   placeId: string;
   name: string;
@@ -16,6 +21,7 @@ export interface PlaceResult {
   priceLevel?: number;
   types?: string[];
   openNow?: boolean;
+  openingHours?: OpeningHoursPeriod[];
   photos?: string[];
 }
 
@@ -78,8 +84,48 @@ export async function searchNearbyPlaces(params: NearbySearchParams): Promise<Pl
     priceLevel: place.price_level,
     types: place.types,
     openNow: place.opening_hours?.open_now,
+    openingHours: place.opening_hours?.periods,
     photos: place.photos?.map((p: any) => p.photo_reference),
   }));
+}
+
+/**
+ * Check if a restaurant is open at a specific date/time
+ */
+export function isOpenAtTime(openingHours: OpeningHoursPeriod[] | undefined, targetDate: Date): boolean {
+  if (!openingHours || openingHours.length === 0) {
+    // If no hours data, assume open (better to show than hide)
+    return true;
+  }
+
+  const dayOfWeek = targetDate.getDay(); // 0 = Sunday
+  const timeStr = targetDate.getHours().toString().padStart(2, '0') + 
+                  targetDate.getMinutes().toString().padStart(2, '0');
+
+  for (const period of openingHours) {
+    // Check if this period covers the target day
+    if (period.open.day === dayOfWeek) {
+      const openTime = period.open.time;
+      const closeTime = period.close?.time || '2359';
+      
+      // Handle overnight hours (close time on next day)
+      if (period.close && period.close.day !== period.open.day) {
+        // Opens today and closes tomorrow - if we're after open time, we're good
+        if (timeStr >= openTime) return true;
+      } else {
+        // Normal same-day hours
+        if (timeStr >= openTime && timeStr <= closeTime) return true;
+      }
+    }
+    
+    // Check if previous day's overnight hours cover us
+    const prevDay = (dayOfWeek + 6) % 7;
+    if (period.open.day === prevDay && period.close && period.close.day === dayOfWeek) {
+      if (timeStr <= period.close.time) return true;
+    }
+  }
+
+  return false;
 }
 
 /**

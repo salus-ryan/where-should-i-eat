@@ -4,7 +4,7 @@ import { fetchAllPlatformReviews } from '@/lib/apis';
 import { calculateAggregatedScore, calculateConfidence } from '@/lib/scoring';
 import { calculateDistance, estimateTravelTime } from '@/lib/geolocation';
 import { calculateValueScore, isExceptionalRestaurant } from '@/lib/ranking';
-import { searchNearbyPlaces, textSearchPlace } from '@/lib/places';
+import { searchNearbyPlaces, textSearchPlace, isOpenAtTime } from '@/lib/places';
 import { WeightingConfig, Restaurant, PlatformReview } from '@/types';
 
 export async function POST(request: NextRequest) {
@@ -18,8 +18,35 @@ export async function POST(request: NextRequest) {
       userLat,
       userLon,
       maxTravelTimeMin = 20,
-      openNowOnly = true,
+      plannedTime = 'now',
     } = body;
+
+    // Convert plannedTime to actual Date for filtering
+    const getPlannedDate = (time: string): Date => {
+      const now = new Date();
+      switch (time) {
+        case 'tonight':
+          const tonight = new Date(now);
+          tonight.setHours(19, 0, 0, 0);
+          if (tonight < now) tonight.setDate(tonight.getDate() + 1);
+          return tonight;
+        case 'tomorrow_lunch':
+          const tomorrowLunch = new Date(now);
+          tomorrowLunch.setDate(tomorrowLunch.getDate() + 1);
+          tomorrowLunch.setHours(12, 0, 0, 0);
+          return tomorrowLunch;
+        case 'tomorrow_dinner':
+          const tomorrowDinner = new Date(now);
+          tomorrowDinner.setDate(tomorrowDinner.getDate() + 1);
+          tomorrowDinner.setHours(19, 0, 0, 0);
+          return tomorrowDinner;
+        default:
+          return now;
+      }
+    };
+
+    const plannedDate = getPlannedDate(plannedTime);
+    const isNow = plannedTime === 'now';
 
     const config: WeightingConfig = weightingConfig || {
       strategy: 'bayesian_average',
@@ -54,7 +81,7 @@ export async function POST(request: NextRequest) {
           latitude: userLat,
           longitude: userLon,
           radius: radiusMeters,
-          openNow: openNowOnly,
+          openNow: isNow, // Only filter by "open now" if searching for right now
         });
 
         // Process ALL places in PARALLEL for maximum speed
@@ -109,9 +136,18 @@ export async function POST(request: NextRequest) {
           })
         );
 
-        // Filter and sort by value score
+        // Filter by open status at planned time and sort by value score
         const results = restaurants
-          .filter(r => !openNowOnly || r.isOpenNow !== false)
+          .filter(r => {
+            if (isNow) {
+              // For "now", use the openNow flag from Google
+              return r.isOpenNow !== false;
+            } else {
+              // For future times, check opening hours
+              const place = places.find(p => p.placeId === r.id);
+              return isOpenAtTime(place?.openingHours, plannedDate);
+            }
+          })
           .filter(r => (r.travelTimeMin || 0) <= maxTravelTimeMin || r.isExceptional)
           .sort((a, b) => (b.valueScore || 0) - (a.valueScore || 0));
 
