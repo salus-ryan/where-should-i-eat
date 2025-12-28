@@ -22,24 +22,33 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Convert plannedTime to actual Date for filtering
+    // If the meal time has already passed today, use tomorrow
     const getPlannedDate = (time: string): Date => {
       const now = new Date();
+      const currentHour = now.getHours();
+      
       switch (time) {
-        case 'tonight':
-          const tonight = new Date(now);
-          tonight.setHours(19, 0, 0, 0);
-          if (tonight < now) tonight.setDate(tonight.getDate() + 1);
-          return tonight;
-        case 'tomorrow_lunch':
-          const tomorrowLunch = new Date(now);
-          tomorrowLunch.setDate(tomorrowLunch.getDate() + 1);
-          tomorrowLunch.setHours(12, 0, 0, 0);
-          return tomorrowLunch;
-        case 'tomorrow_dinner':
-          const tomorrowDinner = new Date(now);
-          tomorrowDinner.setDate(tomorrowDinner.getDate() + 1);
-          tomorrowDinner.setHours(19, 0, 0, 0);
-          return tomorrowDinner;
+        case 'breakfast': {
+          const target = new Date(now);
+          target.setHours(8, 0, 0, 0);
+          // If it's past 10am, breakfast is tomorrow
+          if (currentHour >= 10) target.setDate(target.getDate() + 1);
+          return target;
+        }
+        case 'lunch': {
+          const target = new Date(now);
+          target.setHours(12, 0, 0, 0);
+          // If it's past 2pm, lunch is tomorrow
+          if (currentHour >= 14) target.setDate(target.getDate() + 1);
+          return target;
+        }
+        case 'dinner': {
+          const target = new Date(now);
+          target.setHours(19, 0, 0, 0);
+          // If it's past 9pm, dinner is tomorrow
+          if (currentHour >= 21) target.setDate(target.getDate() + 1);
+          return target;
+        }
         default:
           return now;
       }
@@ -140,8 +149,8 @@ export async function POST(request: NextRequest) {
         const results = restaurants
           .filter(r => {
             if (isNow) {
-              // For "now", use the openNow flag from Google
-              return r.isOpenNow !== false;
+              // For "now", ONLY show places confirmed open (strict: must be true, not undefined)
+              return r.isOpenNow === true;
             } else {
               // For future times, check opening hours
               const place = places.find(p => p.placeId === r.id);

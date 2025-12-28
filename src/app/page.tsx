@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Utensils, Navigation, RefreshCw, MapPin, Clock } from 'lucide-react';
-import { SearchForm, WeightingSelector, ResultCard, LocationButton } from '@/components';
-import { Restaurant, WeightingConfig } from '@/types';
+import { ResultCard, LocationButton } from '@/components';
+import { Restaurant } from '@/types';
 import { Coordinates, getCurrentPosition, reverseGeocode } from '@/lib/geolocation';
 
 export default function Home() {
@@ -16,11 +16,6 @@ export default function Home() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [plannedTime, setPlannedTime] = useState<string>('now'); // 'now' or ISO datetime
-  const [weightingConfig, setWeightingConfig] = useState<WeightingConfig>({
-    strategy: 'bayesian_average',
-    bayesianPrior: 3.5,
-    bayesianMinReviews: 10,
-  });
     const [userLocation, setUserLocation] = useState<Coordinates | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);
   const maxTravelTime = 30; // Fixed 30 min max travel time
@@ -55,50 +50,6 @@ export default function Home() {
     setLocationName(name);
   };
 
-  const handleSearch = async (query: string, location: string) => {
-    setIsLoading(true);
-    setError(null);
-    setSingleResult(null);
-    setAllResults([]);
-    setCurrentIndex(0);
-
-    try {
-      const endpoint = '/api/search';
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query,
-          location: location || locationName || 'New York',
-          weightingConfig,
-          userLat: userLocation?.latitude,
-          userLon: userLocation?.longitude,
-          maxTravelTimeMin: maxTravelTime,
-          openNowOnly: true,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Search failed');
-      }
-
-      // Handle single restaurant vs list response
-      if (data.restaurant) {
-        setSingleResult({
-          restaurant: data.restaurant,
-          errors: data.errors,
-        });
-      } else if (data.restaurants) {
-        setAllResults(data.restaurants);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleFindNearby = async () => {
     if (!userLocation) {
@@ -120,7 +71,6 @@ export default function Home() {
         body: JSON.stringify({
           query: 'nearby',
           location: locationName,
-          weightingConfig,
           userLat: userLocation.latitude,
           userLon: userLocation.longitude,
           maxTravelTimeMin: maxTravelTime,
@@ -150,18 +100,17 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-red-50">
-      {/* Header */}
-      <header className="pt-12 pb-8 px-4">
+      {/* Header - compact for mobile */}
+      <header className="pt-6 pb-4 px-4">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-500 to-red-500 rounded-2xl shadow-lg mb-4">
-            <Utensils className="w-8 h-8 text-white" />
+          <div className="inline-flex items-center gap-3">
+            <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl shadow-lg">
+              <Utensils className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              Where Should I Eat?
+            </h1>
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Where Should I Eat?
-          </h1>
-          <p className="text-gray-600 max-w-md mx-auto">
-            Find the best restaurant near you, open now, ranked by aggregated reviews
-          </p>
         </div>
       </header>
 
@@ -169,8 +118,8 @@ export default function Home() {
       <main className="px-4 pb-16">
         <div className="max-w-4xl mx-auto">
           {/* Location & Time */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-white rounded-xl border border-gray-200 p-3 mb-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
               <LocationButton 
                 onLocationObtained={handleLocationObtained}
                 currentLocation={locationName}
@@ -186,9 +135,9 @@ export default function Home() {
                   className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <option value="now">Right now</option>
-                  <option value="tonight">Tonight (7pm)</option>
-                  <option value="tomorrow_lunch">Tomorrow lunch (12pm)</option>
-                  <option value="tomorrow_dinner">Tomorrow dinner (7pm)</option>
+                  <option value="breakfast">Breakfast (8am)</option>
+                  <option value="lunch">Lunch (12pm)</option>
+                  <option value="dinner">Dinner (7pm)</option>
                 </select>
               </div>
             </div>
@@ -198,22 +147,14 @@ export default function Home() {
               <button
                 onClick={handleFindNearby}
                 disabled={isLoading}
-                className="w-full mt-4 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                className="w-full mt-3 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
               >
-                <Navigation className="w-5 h-5" />
-                {plannedTime === 'now' ? 'Find Best Restaurant Near Me' : `Find Restaurant for ${plannedTime === 'tonight' ? 'Tonight' : plannedTime === 'tomorrow_lunch' ? 'Tomorrow Lunch' : 'Tomorrow Dinner'}`}
+                <Navigation className="w-4 h-4" />
+                {plannedTime === 'now' ? 'Find Restaurant' : `Find for ${plannedTime.charAt(0).toUpperCase() + plannedTime.slice(1)}`}
               </button>
             )}
           </div>
 
-          {/* Search form for specific restaurant */}
-          <div className="mb-4">
-            <p className="text-center text-sm text-gray-500 mb-2">Or search for a specific restaurant:</p>
-            <SearchForm onSearch={handleSearch} isLoading={isLoading} />
-          </div>
-
-          {/* Weighting options */}
-          <WeightingSelector config={weightingConfig} onChange={setWeightingConfig} />
 
           {/* Error display */}
           {error && (
