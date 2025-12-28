@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Utensils, Navigation, RefreshCw, MapPin, Clock } from 'lucide-react';
+import { Utensils, Navigation, RefreshCw, MapPin, Clock, ChevronLeft } from 'lucide-react';
 import { ResultCard, LocationButton } from '@/components';
 import { Restaurant } from '@/types';
 import { Coordinates, getCurrentPosition, reverseGeocode } from '@/lib/geolocation';
@@ -180,7 +180,15 @@ export default function Home() {
               </div>
               
               {/* Action buttons */}
-              <div className="flex gap-3">
+              <div className="flex gap-2">
+                {currentIndex > 0 && (
+                  <button
+                    onClick={() => setCurrentIndex(currentIndex - 1)}
+                    className="px-3 py-3 bg-gray-200 text-gray-700 rounded-xl flex items-center justify-center"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                )}
                 <a
                   href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(currentRestaurant.address)}`}
                   target="_blank"
