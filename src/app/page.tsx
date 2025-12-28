@@ -120,7 +120,7 @@ export default function Home() {
                 isLoading={locationLoading}
               />
               
-              {/* Time picker */}
+              {/* Time picker - dynamically show options based on current time */}
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-gray-500" />
                 <select
@@ -129,9 +129,20 @@ export default function Home() {
                   className="text-sm border border-gray-200 rounded-lg px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500"
                 >
                   <option value="now">Right now</option>
-                  <option value="breakfast">Breakfast (8am)</option>
-                  <option value="lunch">Lunch (12pm)</option>
-                  <option value="dinner">Dinner (7pm)</option>
+                  {(() => {
+                    const hour = new Date().getHours();
+                    const options = [];
+                    // Show breakfast if before 10am
+                    if (hour < 10) options.push(<option key="breakfast" value="breakfast">Breakfast (8am)</option>);
+                    // Show lunch if before 2pm
+                    if (hour < 14) options.push(<option key="lunch" value="lunch">Lunch (12pm)</option>);
+                    // Show dinner if before 9pm
+                    if (hour < 21) options.push(<option key="dinner" value="dinner">Dinner (7pm)</option>);
+                    // Always show tomorrow options
+                    options.push(<option key="tomorrow_lunch" value="tomorrow_lunch">Tomorrow Lunch</option>);
+                    options.push(<option key="tomorrow_dinner" value="tomorrow_dinner">Tomorrow Dinner</option>);
+                    return options;
+                  })()}
                 </select>
               </div>
             </div>
@@ -144,7 +155,7 @@ export default function Home() {
                 className="w-full mt-3 py-2.5 bg-gradient-to-r from-orange-500 to-red-500 text-white font-semibold rounded-xl hover:from-orange-600 hover:to-red-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 transition-all flex items-center justify-center gap-2"
               >
                 <Navigation className="w-4 h-4" />
-                {plannedTime === 'now' ? 'Find Restaurant' : `Find for ${plannedTime.charAt(0).toUpperCase() + plannedTime.slice(1)}`}
+                {plannedTime === 'now' ? 'Find Restaurant' : `Find for ${plannedTime.replace('_', ' ').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}`}
               </button>
             )}
           </div>

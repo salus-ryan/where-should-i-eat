@@ -22,7 +22,6 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Convert plannedTime to actual Date for filtering
-    // If the meal time has already passed today, use tomorrow
     const getPlannedDate = (time: string): Date => {
       const now = new Date();
       const currentHour = now.getHours();
@@ -31,22 +30,31 @@ export async function POST(request: NextRequest) {
         case 'breakfast': {
           const target = new Date(now);
           target.setHours(8, 0, 0, 0);
-          // If it's past 10am, breakfast is tomorrow
           if (currentHour >= 10) target.setDate(target.getDate() + 1);
           return target;
         }
         case 'lunch': {
           const target = new Date(now);
           target.setHours(12, 0, 0, 0);
-          // If it's past 2pm, lunch is tomorrow
           if (currentHour >= 14) target.setDate(target.getDate() + 1);
           return target;
         }
         case 'dinner': {
           const target = new Date(now);
           target.setHours(19, 0, 0, 0);
-          // If it's past 9pm, dinner is tomorrow
           if (currentHour >= 21) target.setDate(target.getDate() + 1);
+          return target;
+        }
+        case 'tomorrow_lunch': {
+          const target = new Date(now);
+          target.setDate(target.getDate() + 1);
+          target.setHours(12, 0, 0, 0);
+          return target;
+        }
+        case 'tomorrow_dinner': {
+          const target = new Date(now);
+          target.setDate(target.getDate() + 1);
+          target.setHours(19, 0, 0, 0);
           return target;
         }
         default:
