@@ -30,19 +30,19 @@ export async function POST(request: NextRequest) {
         case 'breakfast': {
           const target = new Date(now);
           target.setHours(8, 0, 0, 0);
-          if (currentHour >= 10) target.setDate(target.getDate() + 1);
+          if (currentHour >= 8) target.setDate(target.getDate() + 1);
           return target;
         }
         case 'lunch': {
           const target = new Date(now);
           target.setHours(12, 0, 0, 0);
-          if (currentHour >= 14) target.setDate(target.getDate() + 1);
+          if (currentHour >= 12) target.setDate(target.getDate() + 1);
           return target;
         }
         case 'dinner': {
           const target = new Date(now);
           target.setHours(19, 0, 0, 0);
-          if (currentHour >= 21) target.setDate(target.getDate() + 1);
+          if (currentHour >= 19) target.setDate(target.getDate() + 1);
           return target;
         }
         case 'tomorrow_lunch': {

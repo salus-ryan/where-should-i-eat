@@ -132,12 +132,12 @@ export default function Home() {
                   {(() => {
                     const hour = new Date().getHours();
                     const options = [];
-                    // Show breakfast if before 10am
-                    if (hour < 10) options.push(<option key="breakfast" value="breakfast">Breakfast (8am)</option>);
-                    // Show lunch if before 2pm
-                    if (hour < 14) options.push(<option key="lunch" value="lunch">Lunch (12pm)</option>);
-                    // Show dinner if before 9pm
-                    if (hour < 21) options.push(<option key="dinner" value="dinner">Dinner (7pm)</option>);
+                    // Show breakfast if before 8am
+                    if (hour < 8) options.push(<option key="breakfast" value="breakfast">Breakfast (8am)</option>);
+                    // Show lunch if before 12pm
+                    if (hour < 12) options.push(<option key="lunch" value="lunch">Lunch (12pm)</option>);
+                    // Show dinner if before 7pm
+                    if (hour < 19) options.push(<option key="dinner" value="dinner">Dinner (7pm)</option>);
                     // Always show tomorrow options
                     options.push(<option key="tomorrow_lunch" value="tomorrow_lunch">Tomorrow Lunch</option>);
                     options.push(<option key="tomorrow_dinner" value="tomorrow_dinner">Tomorrow Dinner</option>);
