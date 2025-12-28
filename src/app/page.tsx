@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Utensils, Navigation, RefreshCw, MapPin, Clock, ChevronLeft, Loader2 } from 'lucide-react';
+import { Utensils, Navigation, RefreshCw, MapPin, Clock, ChevronLeft, Loader2, ExternalLink, Phone, Globe, Star } from 'lucide-react';
 import { ResultCard, LocationButton } from '@/components';
 import { Restaurant } from '@/types';
 import { Coordinates, getCurrentPosition, reverseGeocode } from '@/lib/geolocation';
@@ -179,24 +179,74 @@ export default function Home() {
           {/* Results - Yes/No flow */}
           {currentRestaurant && !isLoading && (
             <div className="mt-2">
-              {/* Compact result card */}
-              <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl p-3 text-white mb-3">
+              {/* Photo if available */}
+              {currentRestaurant.photoUrl && (
+                <div className="rounded-t-xl overflow-hidden h-32">
+                  <img 
+                    src={currentRestaurant.photoUrl} 
+                    alt={currentRestaurant.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              
+              {/* Main info card */}
+              <div className={`bg-gradient-to-r from-orange-500 to-red-500 ${currentRestaurant.photoUrl ? 'rounded-b-xl' : 'rounded-xl'} p-3 text-white mb-2`}>
                 <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-xs opacity-80">#{currentIndex + 1} Pick</p>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="text-xs opacity-80">#{currentIndex + 1} Pick</p>
+                      {currentRestaurant.cuisine && (
+                        <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">{currentRestaurant.cuisine}</span>
+                      )}
+                      {currentRestaurant.priceLevel && (
+                        <span className="text-xs font-medium">{currentRestaurant.priceLevel}</span>
+                      )}
+                    </div>
                     <h2 className="text-lg font-bold">{currentRestaurant.name}</h2>
                     <p className="text-sm opacity-90">{currentRestaurant.address}</p>
-                    <div className="flex gap-3 mt-1 text-xs">
+                    <div className="flex flex-wrap gap-3 mt-1 text-xs">
                       {currentRestaurant.walkTimeMin && <span>🚶 {currentRestaurant.walkTimeMin} min</span>}
                       {currentRestaurant.driveTimeMin && <span>🚗 {currentRestaurant.driveTimeMin} min</span>}
-                      {currentRestaurant.isOpenNow && <span>✓ Open</span>}
+                      {currentRestaurant.distanceKm && <span>📍 {currentRestaurant.distanceKm} km</span>}
+                      {currentRestaurant.isOpenNow && <span className="text-green-200">✓ Open now</span>}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right ml-2">
                     <div className="text-2xl font-bold">{currentRestaurant.aggregatedScore.toFixed(1)}</div>
                     <div className="text-xs opacity-80">{currentRestaurant.reviews.length} sources</div>
                   </div>
                 </div>
+              </div>
+
+              {/* Platform ratings breakdown */}
+              <div className="bg-white rounded-xl p-3 mb-2 border border-gray-200">
+                <p className="text-xs text-gray-500 mb-2">Ratings by platform</p>
+                <div className="flex flex-wrap gap-2">
+                  {currentRestaurant.reviews.map((review) => (
+                    <div key={review.platform} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-lg text-sm">
+                      <span className="capitalize font-medium">{review.platform}</span>
+                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                      <span>{review.rating.toFixed(1)}</span>
+                      <span className="text-gray-400 text-xs">({review.reviewCount})</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick links */}
+              <div className="flex gap-2 mb-3">
+                {currentRestaurant.googleMapsUrl && (
+                  <a
+                    href={currentRestaurant.googleMapsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 bg-gray-100 text-gray-700 text-sm rounded-lg flex items-center justify-center gap-1 hover:bg-gray-200"
+                  >
+                    <ExternalLink className="w-3 h-3" />
+                    View on Google
+                  </a>
+                )}
               </div>
               
               {/* Action buttons */}

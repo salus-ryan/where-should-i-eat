@@ -13,6 +13,7 @@ export interface Restaurant {
   cuisine?: string;
   priceLevel?: string; // $, $$, $$$, $$$$
   imageUrl?: string;
+  photoUrl?: string;
   reviews: PlatformReview[];
   aggregatedScore: number;
   confidence: number; // 0-1, based on data quality
@@ -27,6 +28,10 @@ export interface Restaurant {
   driveTimeMin?: number;
   valueScore?: number;
   isExceptional?: boolean;
+  phoneNumber?: string;
+  website?: string;
+  googleMapsUrl?: string;
+  types?: string[];
 }
 
 export type WeightingStrategy = 

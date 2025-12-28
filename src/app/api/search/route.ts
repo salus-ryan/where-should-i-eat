@@ -126,6 +126,22 @@ export async function POST(request: NextRequest) {
             const walkTimeMin = estimateWalkTime(distanceKm);
             const driveTimeMin = estimateDriveTime(distanceKm);
 
+            // Build Google Maps URL
+            const googleMapsUrl = `https://www.google.com/maps/place/?q=place_id:${place.placeId}`;
+            
+            // Extract cuisine from types
+            const cuisineTypes = (place.types || []).filter((t: string) => 
+              !['restaurant', 'food', 'point_of_interest', 'establishment'].includes(t)
+            );
+            const cuisine = cuisineTypes.length > 0 
+              ? cuisineTypes[0].replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase())
+              : undefined;
+
+            // Build photo URL if available
+            const photoUrl = place.photos && place.photos[0] 
+              ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0]}&key=${process.env.GOOGLE_PLACES_API_KEY}`
+              : undefined;
+
             const restaurant: Restaurant = {
               id: place.placeId,
               name: place.name,
@@ -141,6 +157,10 @@ export async function POST(request: NextRequest) {
               travelTimeMin: driveTimeMin,
               walkTimeMin,
               driveTimeMin,
+              googleMapsUrl,
+              cuisine,
+              photoUrl,
+              types: place.types,
             };
 
             const exceptional = isExceptionalRestaurant(restaurant);
