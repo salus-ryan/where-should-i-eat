@@ -224,11 +224,11 @@ export default function Home() {
                 <p className="text-xs text-gray-500 mb-2">Ratings by platform</p>
                 <div className="flex flex-wrap gap-2">
                   {currentRestaurant.reviews.map((review) => (
-                    <div key={review.platform} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-lg text-sm">
-                      <span className="capitalize font-medium">{review.platform}</span>
-                      <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                      <span>{review.rating.toFixed(1)}</span>
-                      <span className="text-gray-400 text-xs">({review.reviewCount})</span>
+                    <div key={review.platform} className="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-lg text-sm">
+                      <span className="capitalize font-semibold text-gray-800">{review.platform}</span>
+                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                      <span className="font-bold text-gray-900">{review.rating.toFixed(1)}</span>
+                      <span className="text-gray-600 text-xs">({review.reviewCount.toLocaleString()})</span>
                     </div>
                   ))}
                 </div>
