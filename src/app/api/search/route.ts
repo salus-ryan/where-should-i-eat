@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { scrapeAllPlatforms } from '@/lib/scrapers';
 import { fetchAllPlatformReviews } from '@/lib/apis';
 import { calculateAggregatedScore, calculateConfidence } from '@/lib/scoring';
-import { calculateDistance, estimateTravelTime } from '@/lib/geolocation';
+import { calculateDistance, estimateTravelTime, estimateWalkTime, estimateDriveTime } from '@/lib/geolocation';
 import { calculateValueScore, isExceptionalRestaurant } from '@/lib/ranking';
 import { searchNearbyPlaces, textSearchPlace, isOpenAtTime } from '@/lib/places';
 import { WeightingConfig, Restaurant, PlatformReview } from '@/types';
@@ -115,7 +115,8 @@ export async function POST(request: NextRequest) {
             const confidence = calculateConfidence(allReviews);
             
             const distanceKm = calculateDistance(userLat, userLon, place.latitude, place.longitude);
-            const travelTimeMin = estimateTravelTime(distanceKm);
+            const walkTimeMin = estimateWalkTime(distanceKm);
+            const driveTimeMin = estimateDriveTime(distanceKm);
 
             const restaurant: Restaurant = {
               id: place.placeId,
@@ -129,14 +130,16 @@ export async function POST(request: NextRequest) {
               confidence,
               isOpenNow: place.openNow,
               distanceKm: Math.round(distanceKm * 10) / 10,
-              travelTimeMin,
+              travelTimeMin: driveTimeMin,
+              walkTimeMin,
+              driveTimeMin,
             };
 
             const exceptional = isExceptionalRestaurant(restaurant);
             restaurant.isExceptional = exceptional;
             restaurant.valueScore = calculateValueScore(
               aggregatedScore,
-              travelTimeMin,
+              driveTimeMin,
               maxTravelTimeMin,
               exceptional
             );

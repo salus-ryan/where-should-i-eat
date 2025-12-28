@@ -176,7 +176,8 @@ export default function Home() {
                     <h2 className="text-lg font-bold">{currentRestaurant.name}</h2>
                     <p className="text-sm opacity-90">{currentRestaurant.address}</p>
                     <div className="flex gap-3 mt-1 text-xs">
-                      {currentRestaurant.travelTimeMin && <span>🚶 {currentRestaurant.travelTimeMin} min</span>}
+                      {currentRestaurant.walkTimeMin && <span>🚶 {currentRestaurant.walkTimeMin} min</span>}
+                      {currentRestaurant.driveTimeMin && <span>🚗 {currentRestaurant.driveTimeMin} min</span>}
                       {currentRestaurant.isOpenNow && <span>✓ Open</span>}
                     </div>
                   </div>

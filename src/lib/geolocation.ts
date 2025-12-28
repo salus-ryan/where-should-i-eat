@@ -71,12 +71,26 @@ function toRad(deg: number): number {
 }
 
 /**
- * Estimate travel time in minutes based on distance
- * Assumes average urban speed of ~25 km/h (accounting for traffic, stops, etc.)
+ * Estimate walking time in minutes (avg 5 km/h)
+ */
+export function estimateWalkTime(distanceKm: number): number {
+  const walkSpeedKmH = 5;
+  return Math.round((distanceKm / walkSpeedKmH) * 60);
+}
+
+/**
+ * Estimate driving time in minutes (avg 25 km/h in urban areas)
+ */
+export function estimateDriveTime(distanceKm: number): number {
+  const driveSpeedKmH = 25;
+  return Math.round((distanceKm / driveSpeedKmH) * 60);
+}
+
+/**
+ * Legacy function - returns drive time for backwards compatibility
  */
 export function estimateTravelTime(distanceKm: number): number {
-  const avgSpeedKmH = 25; // Conservative urban estimate
-  return Math.round((distanceKm / avgSpeedKmH) * 60);
+  return estimateDriveTime(distanceKm);
 }
 
 /**

@@ -23,6 +23,8 @@ export interface Restaurant {
   openUntil?: string;
   distanceKm?: number;
   travelTimeMin?: number;
+  walkTimeMin?: number;
+  driveTimeMin?: number;
   valueScore?: number;
   isExceptional?: boolean;
 }
