@@ -287,7 +287,7 @@ export default function Home() {
                 </div>
               ) : (
                 <p className="text-gray-500">
-                  Click &quot;Find Best Restaurant Near Me&quot; to get started
+                  Click &quot;Find Restaurant&quot; to get started
                 </p>
               )}
             </div>
