@@ -234,7 +234,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="py-6 text-center text-sm text-gray-500 border-t border-gray-100">
         <p>
-          Aggregates reviews from Google, Yelp, TripAdvisor, Foursquare & more
+          Aggregates reviews from Google, Yelp & TripAdvisor
         </p>
         <p className="text-xs mt-1 text-gray-400">
           Ranked by value: quality vs. travel time
